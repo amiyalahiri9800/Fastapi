@@ -99,8 +99,8 @@ def get_post(id: int, response: Response):
 def create_posts(post:Post, db: Session = Depends(get_db)):
     #post_dict = post.dict()
     #post_dict["id"] = randrange(0, 10000000)
-    #my_posts.append(post_dict) # amiya changed
-    #print(my_posts)
+    #my_posts.append(post_dict) 
+    #print(my_posts) 
     # cursor.execute("""INSERT INTO posts (title, content, published) VALUES (%s, %s, %s) RETURNING *""",
     #                (post.title, post.content, post.published))
     # new_post = cursor.fetchone()  
@@ -110,7 +110,7 @@ def create_posts(post:Post, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_post)          
     return {"data": new_post}
-
+# anurag
 
 '''def find_index_post(id):
     for index, post in enumerate(my_posts):
