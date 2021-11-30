@@ -8,6 +8,7 @@ import psycopg2 as pg
 from psycopg2.extras import RealDictCursor
 import time
 from sqlalchemy.orm import Session
+from sqlalchemy.sql.expression import false
 from . import models
 from .database import engine, get_db, SessionLocal
 
@@ -79,13 +80,14 @@ def get_posts(db: Session = Depends(get_db)):
 
 #Getting one post by id
 @app.get("/posts/{id}")
-def get_post(id: int, response: Response):
+def get_post(id: int, response: Response, db: Session = Depends(get_db)):
     #post = find_post(id)
-    cursor.execute(""" SELECT * FROM posts WHERE ID = %s""", (str(id)))
-    post = cursor.fetchone()
+    #cursor.execute(""" SELECT * FROM posts WHERE ID = %s""", (str(id)))
+    #post = cursor.fetchone()
+    post = db.query(models.Post).filter(models.Post.id == id).first()
     if not post:                                                              # Regular sql query
-        response.status_code = status.HTTP_404_NOT_FOUND
-        return {"message": f"{id} was not found"}
+        """response.status_code = status.HTTP_404_NOT_FOUND
+        return {"message": f"{id} was not found"}""" # with response
         raise HTTPException(status_code= status.HTTP_404_NOT_FOUND,
                             detail= f"post with {id} was not found")
 
@@ -104,8 +106,9 @@ def create_posts(post:Post, db: Session = Depends(get_db)):
     # cursor.execute("""INSERT INTO posts (title, content, published) VALUES (%s, %s, %s) RETURNING *""",
     #                (post.title, post.content, post.published))
     # new_post = cursor.fetchone()  
-    # conn.commit() 
-    new_post = models.Post(title = post.title, content = post.content, published = post.published)  
+    # conn.commit()
+    #print(**post.dict())  #** is unpacking dict
+    new_post = models.Post(**post.dict())  
     db.add(new_post)
     db.commit()
     db.refresh(new_post)          
@@ -120,33 +123,42 @@ def create_posts(post:Post, db: Session = Depends(get_db)):
 
 #Delete a post
 @app.delete("/posts/{id}")
-def delete_post(id: int):
+def delete_post(id: int, db: Session = Depends(get_db)):
     #index = find_index_post(id)
-    cursor.execute("""DELETE FROM posts WHERE id = %s RETURNING *""", (str(id)))
-    deleted_post = cursor.fetchone()
-    conn.commit()
-    if deleted_post == None:
+    # cursor.execute("""DELETE FROM posts WHERE id = %s RETURNING *""", (str(id)))
+    # deleted_post = cursor.fetchone()
+    # conn.commit()
+    post = db.query(models.Post).filter(models.Post.id == id)
+    if post.first() == None:
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,
                             detail = f"{id} was not found")
-    #my_posts.pop(index)                        
+    #my_posts.pop(index) 
+
+    post.delete(synchronize_session=False)    
+    db.commit()                   
     return Response(status_code=status.HTTP_204_NO_CONTENT)     
 
 
 
 #Update a post
 @app.put("/posts/{id}")
-def update_post(id: int, post: Post):
-    #index = find_index_post(id)
-    cursor.execute("""UPDATE posts SET title = %s, content = %s, published = %s WHERE id = %s RETURNING *""", 
-                             (post.title, post.content, post.published, str(id)))
-    updated_post = cursor.fetchone()
-    conn.commit()
-    if updated_post == None:
+def update_post(id: int, updated_post: Post, db: Session = Depends(get_db)):
+    # #index = find_index_post(id)
+    # cursor.execute("""UPDATE posts SET title = %s, content = %s, published = %s WHERE id = %s RETURNING *""", 
+    #                          (post.title, post.content, post.published, str(id)))
+    # updated_post = cursor.fetchone()
+    # conn.commit()
+    post_query = db.query(models.Post).filter(models.Post.id == id)
+    post = post_query.first()
+    if post == None:
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,
                             detail = f"{id} was not found")
+
+    post_query.update(updated_post.dict(), synchronize_session=False)                        
+    db.commit()
     '''post_dict = post.dict()
     post_dict["id"] = id
     my_posts[index] = post_dict'''
-    return {"message": updated_post}
+    return {"message":post_query.first()}
 
 
