@@ -99,7 +99,7 @@ def get_post(id: int, response: Response):
 def create_posts(post:Post, db: Session = Depends(get_db)):
     #post_dict = post.dict()
     #post_dict["id"] = randrange(0, 10000000)
-    #my_posts.append(post_dict)
+    #my_posts.append(post_dict) # amiya changed
     #print(my_posts)
     # cursor.execute("""INSERT INTO posts (title, content, published) VALUES (%s, %s, %s) RETURNING *""",
     #                (post.title, post.content, post.published))
